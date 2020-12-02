@@ -4,6 +4,7 @@
 #include <random>
 
 unsigned seed = 1234;
+std::default_random_engine generator;
 
 void expo() {
     
@@ -11,7 +12,7 @@ void expo() {
     const int nstars=100;    // maximum number of stars to distribute
     const int nintervals=10; // number of intervals
 
-    std::default_random_engine generator (seed);
+    
     std::exponential_distribution<double> distribution(3.5);
 
     int p[nintervals]={};
@@ -35,7 +36,7 @@ void rovnomerne() {
     const int nstars=95;     // maximum number of stars to distribute
     const int nintervals=100; // number of intervals
 
-    std::default_random_engine generator (seed);
+    
     std::uniform_real_distribution<double> distribution(0.0,10.0);
 
     int p[nintervals]={};
@@ -63,7 +64,7 @@ void uniform() {
     const int nstars=95;     // maximum number of stars to distribute
     const int nintervals=10; // number of intervals
 
-    std::default_random_engine generator (seed);
+   
     std::uniform_real_distribution<double> distribution(0.0,1.0);
 
     int p[nintervals]={};
@@ -101,8 +102,8 @@ int main(int argc, char* argv[])
         std::cout << argv[1] << "\n\n\n";
         seed = atoi(argv[1]);
     }
-
-
+    generator.seed(seed);
+    
     rovnomerne();
 
     uniform();
@@ -112,9 +113,9 @@ int main(int argc, char* argv[])
     const int nrolls=10000;  // number of experiments
     const int nstars=100;    // maximum number of stars to distribute
 
-    std::default_random_engine generator (seed);
+    
     std::normal_distribution<double> distribution(5.0,2.0);
-
+    
     int p[10]={};
 
     for (int i=0; i<nrolls; ++i) {
