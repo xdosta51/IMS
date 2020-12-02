@@ -141,8 +141,8 @@ int main(int argc, char* argv[])
     
     setseed(seed);
 
-    double rovnomerne_start = 1.0;
-    double rovnomerne_end = 1.0;
+    double rovnomerne_start = 0.0;
+    double rovnomerne_end = 10.0;
 
     double rovnomerne_return = rovnomerne(rovnomerne_start, rovnomerne_end);
 
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
     double normal_m = 5.0;
     double normal_s = 2.5;
 
-    double normal_return = (normal_m, normal_s);
+    double normal_return = normal(normal_m, normal_s);
     
     std::cout << "uniform with start" << rovnomerne_start << "and end" << rovnomerne_end << "returned: " << rovnomerne_return << "\n";
     std::cout << "uniform with start 0.0 and end 1.0 returned: " << uniform_return << "\n";
