@@ -51,6 +51,9 @@ void Event::activate(double new_activation_time) {
 // EventComparator
 
 bool EventComparator::operator()(const Event *e1, const Event *e2) const {
+    if (e1->act_time == e2->act_time) {
+        return e1->priority > e2->priority;
+    }
     return e1->act_time < e2->act_time;
 }
 

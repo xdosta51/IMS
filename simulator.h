@@ -26,6 +26,8 @@ class Event {
 public:
     double act_time{};
 
+    unsigned int priority = 1;
+
     virtual void Behavior() = 0;
 
     void activate();

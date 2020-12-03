@@ -35,6 +35,22 @@ class MaybeAgain : public Event {
     }
 };
 
+class Important : public Event {
+    //unsigned int priority = 1;
+    void Behavior() override {
+        std::cout << "Important running at " << curr_time << std::endl;
+        this->activate(curr_time + 1);
+    }
+};
+
+class Importanter : public Event {
+    unsigned int priority = 2;
+    void Behavior() override {
+        std::cout << "Importanter running at " << curr_time << std::endl;
+        this->activate(curr_time + 2);
+    }
+};
+
 int main() {
     set_seed(time(nullptr)); // seed aktualnim casem
     init(0, 18);
@@ -44,7 +60,13 @@ int main() {
     (new OnTwos)->activate();
     (new OnThrees)->activate();
     */
+    /*
     (new MaybeAgain)->activate();
+    */
+    /*
+    (new Important)->activate();
+    (new Importanter)->activate();
+    */
 
     run();
 
