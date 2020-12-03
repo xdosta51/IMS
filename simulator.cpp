@@ -5,7 +5,7 @@
 std::default_random_engine generator;
 double curr_time;
 double end_time;
-std::multiset<Event *, EventComparator> calendar;
+std::multiset<Event *, CalendarEventComparator> calendar;
 
 // -----------------------------------------------------------------------------
 // RNG
@@ -37,6 +37,14 @@ double normal(double m, double s) {
 // -----------------------------------------------------------------------------
 // Event
 
+Event::Event(){
+    this->priority = 0;
+}
+
+Event::Event(unsigned int priority){
+    this->priority = priority;
+}
+
 void Event::activate() {
     act_time = curr_time;
     calendar.insert(this);
@@ -47,10 +55,32 @@ void Event::activate(double new_activation_time) {
     calendar.insert(this);
 }
 
-// -----------------------------------------------------------------------------
-// EventComparator
+void Event::seize(Facility *facility, Event *after_seize) {
+    if (facility->busy()){
+        facility->q1->enqueue(after_seize);
+    } else {
+        facility->available = false;
+        after_seize->activate();
+    }
+}
 
-bool EventComparator::operator()(const Event *e1, const Event *e2) const {
+void Event::release(Facility *facility, Event *after_release) {
+    if (facility->q1->empty()){
+        facility->available = true;
+    } else {
+        auto e = facility->q1->pop();
+        e->activate();
+    }
+
+    if (after_release != nullptr) {
+        after_release->activate();
+    }
+}
+
+// -----------------------------------------------------------------------------
+// CalendarEventComparator
+
+bool CalendarEventComparator::operator()(const Event *e1, const Event *e2) const {
     if (e1->act_time == e2->act_time) {
         return e1->priority > e2->priority;
     }
@@ -76,8 +106,59 @@ void run() {
             return;
         }
 
-        (*e)->Behavior();
+        (*e)->behavior();
     }
 }
 
+// -----------------------------------------------------------------------------
+// QueueItemComparator
 
+bool QueueItemComparator::operator()(const QueueItem *qi1, const QueueItem *qi2) const {
+    if (qi1->e->priority == qi2->e->priority){
+        return qi1->id < qi2->id;
+    }
+
+    return qi1->e->priority > qi2->e->priority;
+}
+
+// -----------------------------------------------------------------------------
+// Queue
+
+void Queue::enqueue(Event *e) {
+    auto qi = new QueueItem;
+    qi->id = (this->next_id)++;
+    qi->e = e;
+    this->q.insert(qi);
+}
+
+Event * Queue::pop() {
+    auto qi = this->q.begin();
+    this->q.erase(qi);
+    return (*qi)->e;
+}
+
+bool Queue::empty() {
+    return this->q.empty();
+}
+
+// -----------------------------------------------------------------------------
+// Facility
+
+Facility::Facility(){
+    this->name = "NO NAME";
+    this->q1 = new Queue;
+}
+
+Facility::Facility(std::string name){
+    this->name = name;
+    this->q1 = new Queue;
+}
+
+Facility::Facility(std::string name, Queue* q){
+    this->name = name;
+    this->q1 = q;
+}
+
+bool Facility::busy() {
+    return !available;
+}

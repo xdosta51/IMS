@@ -2,29 +2,35 @@
 #include <iostream>
 #include <ctime>
 
+// -----------------------------------------------------------------------------
+// periodic event example
+
 class OnOnes : public Event {
-    void Behavior() override {
+    void behavior() override {
         std::cout << "OnOnes running at " << curr_time << std::endl;
         this->activate(curr_time + 1);
     }
 };
 
 class OnTwos : public Event {
-    void Behavior() override {
+    void behavior() override {
         std::cout << "OnTwos running at " << curr_time << std::endl;
         this->activate(curr_time + 2);
     }
 };
 
 class OnThrees : public Event {
-    void Behavior() override {
+    void behavior() override {
         std::cout << "OnThrees running at " << curr_time << std::endl;
         this->activate(curr_time + 3);
     }
 };
 
+// -----------------------------------------------------------------------------
+// rng example
+
 class MaybeAgain : public Event {
-    void Behavior() override {
+    void behavior() override {
         std::cout << "MaybeAgain running at " << curr_time;
 
         double r = uniform();
@@ -35,38 +41,146 @@ class MaybeAgain : public Event {
     }
 };
 
+// -----------------------------------------------------------------------------
+// event priority example
+
 class Important : public Event {
-    //unsigned int priority = 1;
-    void Behavior() override {
+    //unsigned int priority = 0; // implicit
+    void behavior() override {
         std::cout << "Important running at " << curr_time << std::endl;
         this->activate(curr_time + 1);
     }
 };
 
 class Importanter : public Event {
-    unsigned int priority = 2;
-    void Behavior() override {
+public:
+    explicit Importanter(unsigned int priority) : Event(priority){};
+    void behavior() override {
         std::cout << "Importanter running at " << curr_time << std::endl;
         this->activate(curr_time + 2);
     }
 };
 
+// -----------------------------------------------------------------------------
+// queing example
+
+class QueueTest1 : public Event {
+    void behavior() override {
+        std::cout << "QT1 running at " << curr_time << std::endl;
+    }
+};
+
+class QueueTest2 : public Event {
+    void behavior() override {
+        std::cout << "QT2 running at " << curr_time << std::endl;
+    }
+};
+
+class QueueTest3 : public Event {
+    void behavior() override {
+        std::cout << "QT3 running at " << curr_time << std::endl;
+    }
+};
+
+class QueueTestBigPrio : public Event {
+public:
+    explicit QueueTestBigPrio(unsigned int priority) : Event(priority){};
+    void behavior() override {
+        std::cout << "QTBP "<< this->priority <<" running at " << curr_time << std::endl;
+    }
+};
+
+Queue test_q;
+
+class QueuePopper : public Event {
+    void behavior() override {
+        if (!test_q.empty()){
+            auto e = test_q.pop();
+            e->activate();
+            this->activate(curr_time +1);
+        }
+
+    }
+};
+
+// -----------------------------------------------------------------------------
+// Facility example
+
+class FacilityTestGenerator : public Event {
+    void behavior() override;
+};
+class FacilityTestSeize : public Event {
+    void behavior() override;
+};
+class FacilityTestWork : public Event {
+    void behavior() override;
+};
+class FacilityTestRelease : public Event {
+    void behavior() override;
+};
+class FacilityTestLeave : public Event {
+    void behavior() override;
+};
+Facility f;
+
+void FacilityTestGenerator::behavior() {
+    (new FacilityTestSeize)->activate();
+    this->activate(curr_time + (int)uniform(1,3));
+    std::cout << "started new worker at " << curr_time << std::endl;
+}
+void FacilityTestSeize::behavior() {
+    std::cout << "worker tries seize at " << curr_time << std::endl;
+    seize(&f, new FacilityTestWork);
+}
+void FacilityTestWork::behavior() {
+    std::cout << "worker starts working at " << curr_time << std::endl;
+    (new FacilityTestRelease)->activate(curr_time + (int)uniform(1,10));
+}
+void FacilityTestRelease::behavior() {
+    std::cout << "worker finished working at " << curr_time << std::endl;
+    release(&f, new FacilityTestLeave);
+}
+void FacilityTestLeave::behavior() {
+    std::cout << "worker leaves at " << curr_time << std::endl;
+}
+
+
+
+
 int main() {
     set_seed(time(nullptr)); // seed aktualnim casem
-    init(0, 18);
+    init(0, 30);
 
     /*
+    // periodic event example
     (new OnOnes)->activate();
     (new OnTwos)->activate();
     (new OnThrees)->activate();
     */
+
     /*
+    // rng example
     (new MaybeAgain)->activate();
     */
+
     /*
+    // event priority example
     (new Important)->activate();
-    (new Importanter)->activate();
+    (new Importanter(10))->activate();
     */
+
+    /*
+    // queing example
+    test_q.enqueue(new QueueTest1);
+    test_q.enqueue(new QueueTest2);
+    test_q.enqueue(new QueueTestBigPrio(10));
+    test_q.enqueue(new QueueTest3);
+    test_q.enqueue(new QueueTestBigPrio(20));
+    (new QueuePopper)->activate();
+    */
+
+    // Facility example
+    (new FacilityTestGenerator)->activate();
 
     run();
 
