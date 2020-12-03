@@ -2,6 +2,7 @@
 #define IMS_SIMULATOR_H
 
 #include <set>
+#include <list>
 #include <random>
 
 // -----------------------------------------------------------------------------
@@ -65,6 +66,8 @@ extern double curr_time;
 
 extern double end_time;
 
+extern double start_time;
+
 extern std::multiset<Event *, CalendarEventComparator> calendar;
 
 void init(double start_time, double end_time);
@@ -113,6 +116,12 @@ public:
 // Facility
 
 class Facility {
+    unsigned int requests = 0;
+
+    std::list<double> history;
+
+    double utilization();
+
 public:
     std::string name;
 
@@ -127,6 +136,12 @@ public:
     Facility(std::string name, Queue *q);
 
     bool busy();
+
+    void inc_requests();
+
+    void availability_changed();
+
+    void output();
 };
 
 // -----------------------------------------------------------------------------

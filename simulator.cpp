@@ -3,8 +3,9 @@
 #include <random>
 #include <climits>
 
-static unsigned long ix = 1; 
+static unsigned long ix = 1;
 double curr_time;
+double start_time;
 double end_time;
 std::multiset<Event *, CalendarEventComparator> calendar;
 
@@ -16,24 +17,24 @@ void set_seed(int seed) {
 }
 
 double uniform() {
-    ix = ix * 69069L + 1; 
-    return ix / ((double)ULONG_MAX + 1);
+    ix = ix * 69069L + 1;
+    return ix / ((double) ULONG_MAX + 1);
 }
 
 double uniform(double start, double end) {
     double i = start + end * uniform();
-    return(i);
+    return (i);
 }
 
 double expo(double exp_arg) {
-    return - exp_arg * log(uniform());
+    return -exp_arg * log(uniform());
 }
 
 double normal(double mean, double stdev) {
     double u1, u2, v1, v2, s;
     static double v2_static;
     static bool v2_is_null = true;
-    
+
     if (v2_is_null) {
         do {
             u1 = uniform();
@@ -57,11 +58,11 @@ double normal(double mean, double stdev) {
 // -----------------------------------------------------------------------------
 // Event
 
-Event::Event(){
+Event::Event() {
     this->priority = 0;
 }
 
-Event::Event(unsigned int priority){
+Event::Event(unsigned int priority) {
     this->priority = priority;
 }
 
@@ -76,17 +77,20 @@ void Event::activate(double new_activation_time) {
 }
 
 void Event::seize(Facility *facility, Event *after_seize) {
-    if (facility->busy()){
+    facility->inc_requests();
+    if (facility->busy()) {
         facility->q1->enqueue(after_seize);
     } else {
         facility->available = false;
+        facility->availability_changed();
         after_seize->activate();
     }
 }
 
 void Event::release(Facility *facility, Event *after_release) {
-    if (facility->q1->empty()){
+    if (facility->q1->empty()) {
         facility->available = true;
+        facility->availability_changed();
     } else {
         auto e = facility->q1->pop();
         e->activate();
@@ -97,8 +101,8 @@ void Event::release(Facility *facility, Event *after_release) {
     }
 }
 
-void Event::enter(Store *store, Event* after_enter, unsigned int amount){
-    if (amount > store->capacity){
+void Event::enter(Store *store, Event *after_enter, unsigned int amount) {
+    if (amount > store->capacity) {
         store->q1->enqueue(after_enter, amount);
     } else {
         store->capacity -= amount;
@@ -106,11 +110,11 @@ void Event::enter(Store *store, Event* after_enter, unsigned int amount){
     }
 }
 
-void Event::leave(Store *store, Event* after_leave, unsigned int amount){
+void Event::leave(Store *store, Event *after_leave, unsigned int amount) {
     store->capacity += amount;
-    if (!store->q1->empty()){
-        for (auto itr = store->q1->q.begin(); itr != store->q1->q.end(); itr++){
-            if ((*itr)->amount <= store->capacity){
+    if (!store->q1->empty()) {
+        for (auto itr = store->q1->q.begin(); itr != store->q1->q.end(); itr++) {
+            if ((*itr)->amount <= store->capacity) {
                 store->capacity -= (*itr)->amount;
                 (*itr)->e->activate();
                 store->q1->q.erase(itr);
@@ -119,7 +123,7 @@ void Event::leave(Store *store, Event* after_leave, unsigned int amount){
         }
     }
 
-    if (after_leave != nullptr){
+    if (after_leave != nullptr) {
         after_leave->activate();
     }
 }
@@ -138,6 +142,7 @@ bool CalendarEventComparator::operator()(const Event *e1, const Event *e2) const
 // simulation control
 
 void init(double _start_time, double _end_time) {
+    start_time = _start_time;
     curr_time = _start_time;
     end_time = _end_time;
 }
@@ -149,19 +154,21 @@ void run() {
 
         curr_time = (*e)->act_time;
         if (end_time < curr_time) {
+            curr_time = end_time;
             std::cout << "End of simulation" << std::endl;
             return;
         }
 
         (*e)->behavior();
     }
+    curr_time = end_time;
 }
 
 // -----------------------------------------------------------------------------
 // QueueItemComparator
 
 bool QueueItemComparator::operator()(const QueueItem *qi1, const QueueItem *qi2) const {
-    if (qi1->e->priority == qi2->e->priority){
+    if (qi1->e->priority == qi2->e->priority) {
         return qi1->id < qi2->id;
     }
 
@@ -186,7 +193,7 @@ void Queue::enqueue(Event *e, unsigned int amount) {
     this->q.insert(qi);
 }
 
-Event * Queue::pop() {
+Event *Queue::pop() {
     auto qi = this->q.begin();
     this->q.erase(qi);
     return (*qi)->e;
@@ -199,17 +206,17 @@ bool Queue::empty() {
 // -----------------------------------------------------------------------------
 // Facility
 
-Facility::Facility(){
+Facility::Facility() {
     this->name = "NO NAME";
     this->q1 = new Queue;
 }
 
-Facility::Facility(std::string name){
+Facility::Facility(std::string name) {
     this->name = name;
     this->q1 = new Queue;
 }
 
-Facility::Facility(std::string name, Queue* q){
+Facility::Facility(std::string name, Queue *q) {
     this->name = name;
     this->q1 = q;
 }
@@ -218,22 +225,54 @@ bool Facility::busy() {
     return !available;
 }
 
+void Facility::inc_requests() {
+    this->requests += 1;
+}
+
+void Facility::availability_changed() {
+    this->history.push_back(curr_time);
+}
+
+double Facility::utilization() {
+    double time_utilized = 0;
+    double prev = start_time;
+    unsigned int u = 0;
+
+    for (auto itt = history.begin(); itt != history.end(); itt++) {
+        time_utilized += u * (*itt - prev);
+        u = 1 - u;
+        prev = *itt;
+    }
+    time_utilized += u * (curr_time - prev);
+    return time_utilized / (curr_time - start_time);
+}
+
+void Facility::output() {
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl << "FACILITY " << name << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl << "Requests=" << requests << std::endl
+              << "Utilization=" << utilization() << std::endl;
+}
+
+
+
 // -----------------------------------------------------------------------------
 // Store
 
-Store::Store(unsigned int capacity){
+Store::Store(unsigned int capacity) {
     this->name = "NO NAME";
     this->q1 = new Queue;
     this->capacity = capacity;
 }
 
-Store::Store(std::string name, unsigned int capacity){
+Store::Store(std::string name, unsigned int capacity) {
     this->name = name;
     this->q1 = new Queue;
     this->capacity = capacity;
 }
 
-Store::Store(std::string name, unsigned int capacity, Queue *q){
+Store::Store(std::string name, unsigned int capacity, Queue *q) {
     this->name = name;
     this->q1 = q;
     this->capacity = capacity;

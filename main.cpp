@@ -125,7 +125,7 @@ Facility f;
 
 void FacilityTestGenerator::behavior() {
     (new FacilityTestSeize)->activate();
-    this->activate(curr_time + (int)uniform(1,3));
+    this->activate(curr_time + (int)uniform(1,30));
     std::cout << "started new worker at " << curr_time << std::endl;
 }
 void FacilityTestSeize::behavior() {
@@ -207,9 +207,36 @@ void SE4LBIG::behavior() {
 }
 
 
+// -----------------------------------------------------------------------------
+// UtilizTest example
+
+Facility UTF("UtilizTest FACILITY");
+
+class UTL : public Event {
+    void behavior() override{
+        std::cout << "end work at " << curr_time << std::endl;
+        release(&UTF, nullptr);
+    }
+};
+
+class UTW : public Event {
+    void behavior() override{
+        std::cout << "start work at " << curr_time << std::endl;
+        (new UTL)->activate(curr_time + 50);
+    }
+};
+
+class UTS : public Event {
+    void behavior() override{
+        std::cout << "start at " << curr_time << std::endl;
+        seize(&UTF, new UTW);
+    }
+};
+
+
 int main() {
     set_seed(time(nullptr)); // seed aktualnim casem
-    init(0, 100);
+    init(0, 150);
 
     /*
     // periodic event example
@@ -239,10 +266,9 @@ int main() {
     (new QueuePopper)->activate();
     */
 
-    /*
+
     // Facility example
     (new FacilityTestGenerator)->activate();
-    */
 
 
     /*
@@ -251,7 +277,13 @@ int main() {
     */
 
 
+    // UtilizTest example
+    //(new UTS)->activate();
+
     run();
+
+    //UTF.output();
+    f.output();
 
     return 0;
 }
