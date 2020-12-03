@@ -15,18 +15,18 @@ void set_seed(int seed) {
     ix = seed;
 }
 
-double uniform_rand() {
+double uniform() {
     ix = ix * 69069L + 1; 
     return ix / ((double)ULONG_MAX + 1);
 }
 
 double uniform(double start, double end) {
-    double i = start + end * uniform_rand();
+    double i = start + end * uniform();
     return(i);
 }
 
 double expo(double exp_arg) {
-    return - exp_arg * log(uniform_rand());
+    return - exp_arg * log(uniform());
 }
 
 double normal(double mean, double stdev) {
@@ -36,8 +36,8 @@ double normal(double mean, double stdev) {
     
     if (v2_is_null) {
         do {
-            u1 = uniform_rand();
-            u2 = uniform_rand();
+            u1 = uniform();
+            u2 = uniform();
 
             v1 = 2 * u1 - 1;
             v2 = 2 * u2 - 1;
