@@ -23,6 +23,7 @@ double normal(double m, double s);
 // Event
 
 class Facility; // forward declaration
+class Store; // forward declaration
 
 class Event {
 public:
@@ -40,9 +41,13 @@ public:
 
     void activate(double new_activation_time);
 
-    void seize(Facility* facility, Event* after_seize);
+    void seize(Facility *facility, Event *after_seize);
 
-    void release(Facility* facility, Event* after_release);
+    void release(Facility *facility, Event *after_release);
+
+    void enter(Store *store, Event* after_enter, unsigned int amount);
+
+    void leave(Store *store, Event* after_leave, unsigned int amount);
 };
 
 // -----------------------------------------------------------------------------
@@ -50,7 +55,7 @@ public:
 
 class CalendarEventComparator {
 public:
-    bool operator() (const Event* e1, const Event* e2) const;
+    bool operator()(const Event *e1, const Event *e2) const;
 };
 
 // -----------------------------------------------------------------------------
@@ -69,11 +74,13 @@ void run();
 // -----------------------------------------------------------------------------
 // QueueItem
 
-class QueueItem{
+class QueueItem {
 public:
     unsigned int id;
 
-    Event* e;
+    Event *e;
+
+    unsigned int amount;
 };
 
 // -----------------------------------------------------------------------------
@@ -81,13 +88,13 @@ public:
 
 class QueueItemComparator {
 public:
-    bool operator() (const QueueItem* e1, const QueueItem* e2) const;
+    bool operator()(const QueueItem *e1, const QueueItem *e2) const;
 };
 
 // -----------------------------------------------------------------------------
 // Queue
 
-class Queue{
+class Queue {
 public:
     std::multiset<QueueItem *, QueueItemComparator> q;
 
@@ -95,7 +102,9 @@ public:
 
     void enqueue(Event *e);
 
-    Event * pop();
+    void enqueue(Event *e, unsigned int amount);
+
+    Event *pop();
 
     bool empty();
 };
@@ -107,7 +116,7 @@ class Facility {
 public:
     std::string name;
 
-    Queue* q1;
+    Queue *q1;
 
     bool available = true;
 
@@ -115,9 +124,27 @@ public:
 
     explicit Facility(std::string name);
 
-    Facility(std::string name, Queue* q);
+    Facility(std::string name, Queue *q);
 
     bool busy();
+};
+
+// -----------------------------------------------------------------------------
+// Store
+
+class Store {
+public:
+    std::string name;
+
+    Queue *q1;
+
+    unsigned int capacity;
+
+    explicit Store(unsigned int capacity);
+
+    Store(std::string name, unsigned int capacity);
+
+    Store(std::string name, unsigned int capacity, Queue *q);
 };
 
 #endif //IMS_SIMULATOR_H

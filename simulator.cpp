@@ -77,6 +77,33 @@ void Event::release(Facility *facility, Event *after_release) {
     }
 }
 
+void Event::enter(Store *store, Event* after_enter, unsigned int amount){
+    if (amount > store->capacity){
+        store->q1->enqueue(after_enter, amount);
+    } else {
+        store->capacity -= amount;
+        after_enter->activate();
+    }
+}
+
+void Event::leave(Store *store, Event* after_leave, unsigned int amount){
+    store->capacity += amount;
+    if (!store->q1->empty()){
+        for (auto itr = store->q1->q.begin(); itr != store->q1->q.end(); itr++){
+            if ((*itr)->amount <= store->capacity){
+                store->capacity -= (*itr)->amount;
+                (*itr)->e->activate();
+                store->q1->q.erase(itr);
+                break;
+            }
+        }
+    }
+
+    if (after_leave != nullptr){
+        after_leave->activate();
+    }
+}
+
 // -----------------------------------------------------------------------------
 // CalendarEventComparator
 
@@ -131,6 +158,14 @@ void Queue::enqueue(Event *e) {
     this->q.insert(qi);
 }
 
+void Queue::enqueue(Event *e, unsigned int amount) {
+    auto qi = new QueueItem;
+    qi->id = (this->next_id)++;
+    qi->e = e;
+    qi->amount = amount;
+    this->q.insert(qi);
+}
+
 Event * Queue::pop() {
     auto qi = this->q.begin();
     this->q.erase(qi);
@@ -161,4 +196,25 @@ Facility::Facility(std::string name, Queue* q){
 
 bool Facility::busy() {
     return !available;
+}
+
+// -----------------------------------------------------------------------------
+// Store
+
+Store::Store(unsigned int capacity){
+    this->name = "NO NAME";
+    this->q1 = new Queue;
+    this->capacity = capacity;
+}
+
+Store::Store(std::string name, unsigned int capacity){
+    this->name = name;
+    this->q1 = new Queue;
+    this->capacity = capacity;
+}
+
+Store::Store(std::string name, unsigned int capacity, Queue *q){
+    this->name = name;
+    this->q1 = q;
+    this->capacity = capacity;
 }
