@@ -11,7 +11,7 @@ extern std::default_random_engine generator;
 
 void set_seed(int seed);
 
-double uniform();
+double uniform_rand();
 
 double uniform(double start, double end);
 

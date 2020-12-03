@@ -1,8 +1,9 @@
 #include "simulator.h"
 #include <iostream>
 #include <random>
+#include <climits>
 
-std::default_random_engine generator;
+static unsigned long ix = 1; 
 double curr_time;
 double end_time;
 std::multiset<Event *, CalendarEventComparator> calendar;
@@ -11,27 +12,46 @@ std::multiset<Event *, CalendarEventComparator> calendar;
 // RNG
 
 void set_seed(int seed) {
-    generator.seed(seed);
+    ix = seed;
 }
 
-double uniform() {
-    std::uniform_real_distribution<double> distribution(0.0, 1.0);
-    return distribution(generator);
+double uniform_rand() {
+    ix = ix * 69069L + 1; 
+    return ix / ((double)ULONG_MAX + 1);
 }
 
 double uniform(double start, double end) {
-    std::uniform_real_distribution<double> distribution(start, end);
-    return distribution(generator);
+    double i = start + end * uniform_rand();
+    return(i);
 }
 
 double expo(double exp_arg) {
-    std::exponential_distribution<double> distribution(exp_arg);
-    return distribution(generator);
+    return - exp_arg * log(uniform_rand());
 }
 
-double normal(double m, double s) {
-    std::normal_distribution<double> distribution(m, s);
-    return distribution(generator);
+double normal(double mean, double stdev) {
+    double u1, u2, v1, v2, s;
+    static double v2_static;
+    static bool v2_is_null = true;
+    
+    if (v2_is_null) {
+        do {
+            u1 = uniform_rand();
+            u2 = uniform_rand();
+
+            v1 = 2 * u1 - 1;
+            v2 = 2 * u2 - 1;
+            s = v1 * v1 + v2 * v2;
+        } while (s == 0 || s >= 1);
+
+        v2_static = v2 * sqrt(-2 * log(s) / s);
+        v2_is_null = false;
+        return stdev * v1 * sqrt(-2 * log(s) / s) + mean;
+    }
+
+    v2 = v2_static;
+    v2_is_null = true;
+    return stdev * v2 + mean;
 }
 
 // -----------------------------------------------------------------------------
