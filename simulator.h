@@ -4,6 +4,9 @@
 #include <set>
 #include <list>
 #include <random>
+#include <utility>
+#include <cmath>
+#include <numeric>
 
 // -----------------------------------------------------------------------------
 // RNG
@@ -46,9 +49,9 @@ public:
 
     void release(Facility *facility, Event *after_release);
 
-    void enter(Store *store, Event* after_enter, unsigned int amount);
+    void enter(Store *store, Event *after_enter, unsigned int amount);
 
-    void leave(Store *store, Event* after_leave, unsigned int amount);
+    void leave(Store *store, Event *after_leave, unsigned int amount);
 };
 
 // -----------------------------------------------------------------------------
@@ -84,6 +87,8 @@ public:
     Event *e;
 
     unsigned int amount;
+
+    double entered_at;
 };
 
 // -----------------------------------------------------------------------------
@@ -98,6 +103,18 @@ public:
 // Queue
 
 class Queue {
+    double min_time_spent = INFINITY;
+
+    double max_time_spent = 0;
+
+    std::list<double> time_spent;
+
+    std::list<std::pair<double, unsigned int>> length_history;
+
+    unsigned int max_len = 0;
+
+    double avg_len();
+
 public:
     std::multiset<QueueItem *, QueueItemComparator> q;
 
@@ -110,6 +127,12 @@ public:
     Event *pop();
 
     bool empty();
+
+    void length_changed();
+
+    void add_to_stats(double qi_time_spent);
+
+    void output();
 };
 
 // -----------------------------------------------------------------------------
@@ -148,6 +171,18 @@ public:
 // Store
 
 class Store {
+    std::list<std::pair<double, unsigned int>> used_history;
+
+    unsigned int initial_capacity;
+
+    unsigned int entries = 0;
+
+    unsigned int min_used;
+
+    unsigned int max_used;
+
+    double avg_used();
+
 public:
     std::string name;
 
@@ -160,6 +195,12 @@ public:
     Store(std::string name, unsigned int capacity);
 
     Store(std::string name, unsigned int capacity, Queue *q);
+
+    void inc_entries();
+
+    void capacity_changed();
+
+    void output();
 };
 
 #endif //IMS_SIMULATOR_H

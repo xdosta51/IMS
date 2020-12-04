@@ -59,7 +59,7 @@ double normal(double mean, double stdev) {
 // Event
 
 Event::Event() {
-    this->priority = 0;
+    priority = 0;
 }
 
 Event::Event(unsigned int priority) {
@@ -107,17 +107,24 @@ void Event::enter(Store *store, Event *after_enter, unsigned int amount) {
     } else {
         store->capacity -= amount;
         after_enter->activate();
+        store->inc_entries();
+        store->capacity_changed();
     }
 }
 
 void Event::leave(Store *store, Event *after_leave, unsigned int amount) {
     store->capacity += amount;
+    store->capacity_changed();
     if (!store->q1->empty()) {
         for (auto itr = store->q1->q.begin(); itr != store->q1->q.end(); itr++) {
             if ((*itr)->amount <= store->capacity) {
                 store->capacity -= (*itr)->amount;
                 (*itr)->e->activate();
                 store->q1->q.erase(itr);
+                store->q1->add_to_stats(curr_time - (*itr)->entered_at);
+                store->q1->length_changed();
+                store->inc_entries();
+                store->capacity_changed();
                 break;
             }
         }
@@ -178,47 +185,92 @@ bool QueueItemComparator::operator()(const QueueItem *qi1, const QueueItem *qi2)
 // -----------------------------------------------------------------------------
 // Queue
 
+void Queue::add_to_stats(double qi_time_spent) {
+    if (qi_time_spent < min_time_spent) {
+        min_time_spent = qi_time_spent;
+    }
+    if (qi_time_spent > max_time_spent) {
+        max_time_spent = qi_time_spent;
+    }
+    time_spent.push_back(qi_time_spent);
+}
+
 void Queue::enqueue(Event *e) {
     auto qi = new QueueItem;
-    qi->id = (this->next_id)++;
+    qi->id = (next_id)++;
     qi->e = e;
-    this->q.insert(qi);
+    qi->entered_at = curr_time;
+    q.insert(qi);
 }
 
 void Queue::enqueue(Event *e, unsigned int amount) {
     auto qi = new QueueItem;
-    qi->id = (this->next_id)++;
+    qi->id = (next_id)++;
     qi->e = e;
     qi->amount = amount;
-    this->q.insert(qi);
+    qi->entered_at = curr_time;
+    q.insert(qi);
+    length_changed();
 }
 
 Event *Queue::pop() {
-    auto qi = this->q.begin();
-    this->q.erase(qi);
+    auto qi = q.begin();
+    q.erase(qi);
+    add_to_stats(curr_time - (*qi)->entered_at);
+    length_changed();
     return (*qi)->e;
 }
 
 bool Queue::empty() {
-    return this->q.empty();
+    return q.empty();
+}
+
+void Queue::length_changed() {
+    if (q.size() > max_len) {
+        max_len = q.size();
+    }
+
+    length_history.emplace_back(curr_time, q.size());
+
+}
+
+double Queue::avg_len() {
+    std::pair<double, unsigned int> prev(0.0, 0);
+    double sum = 0;
+
+    for (auto itt = length_history.begin(); itt != length_history.end(); itt++) {
+        sum += prev.second * ((*itt).first - prev.first);
+        prev = (*itt);
+    }
+    sum += prev.second * (curr_time - prev.first);
+    return sum / (curr_time - start_time);
+}
+
+void Queue::output() {
+    double avg_time = std::accumulate(time_spent.begin(), time_spent.end(), 0.0) / time_spent.size();
+    std::cout << "Max length=" << max_len << std::endl
+              << "Avg length=" << avg_len() << std::endl
+              << "Min time=" << min_time_spent << std::endl
+              << "Max time=" << max_time_spent << std::endl
+              << "Avg time=" << avg_time << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 // Facility
 
 Facility::Facility() {
-    this->name = "NO NAME";
-    this->q1 = new Queue;
+    name = "NO NAME";
+    q1 = new Queue;
 }
 
 Facility::Facility(std::string name) {
     this->name = name;
-    this->q1 = new Queue;
+    q1 = new Queue;
 }
 
 Facility::Facility(std::string name, Queue *q) {
     this->name = name;
-    this->q1 = q;
+    q1 = q;
 }
 
 bool Facility::busy() {
@@ -226,11 +278,11 @@ bool Facility::busy() {
 }
 
 void Facility::inc_requests() {
-    this->requests += 1;
+    requests += 1;
 }
 
 void Facility::availability_changed() {
-    this->history.push_back(curr_time);
+    history.push_back(curr_time);
 }
 
 double Facility::utilization() {
@@ -253,6 +305,11 @@ void Facility::output() {
     for (int i = 0; i < 80; i++) std::cout << "*";
     std::cout << std::endl << "Requests=" << requests << std::endl
               << "Utilization=" << utilization() << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl << ".Q1" << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl;
+    q1->output();
 }
 
 
@@ -261,19 +318,73 @@ void Facility::output() {
 // Store
 
 Store::Store(unsigned int capacity) {
-    this->name = "NO NAME";
-    this->q1 = new Queue;
+    name = "NO NAME";
+    q1 = new Queue;
     this->capacity = capacity;
+    initial_capacity = capacity;
+    min_used = 0;
+    max_used = 0;
 }
 
 Store::Store(std::string name, unsigned int capacity) {
     this->name = name;
-    this->q1 = new Queue;
+    q1 = new Queue;
     this->capacity = capacity;
+    initial_capacity = capacity;
+    min_used = 0;
+    max_used = 0;
 }
 
 Store::Store(std::string name, unsigned int capacity, Queue *q) {
     this->name = name;
-    this->q1 = q;
+    q1 = q;
     this->capacity = capacity;
+    initial_capacity = capacity;
+    min_used = 0;
+    max_used = 0;
 }
+
+void Store::inc_entries() {
+    entries++;
+}
+
+void Store::capacity_changed() {
+    unsigned int used = initial_capacity - capacity;
+    if (used < min_used) {
+        min_used = used;
+    }
+    if (used > max_used) {
+        max_used = used;
+    }
+    used_history.emplace_back(curr_time, used);
+}
+
+double Store::avg_used() {
+    std::pair<double, unsigned int> prev(0.0, 0);
+    double sum = 0;
+
+    for (auto itt = used_history.begin(); itt != used_history.end(); itt++) {
+        sum += prev.second * ((*itt).first - prev.first);
+        prev = (*itt);
+    }
+    sum += prev.second * (curr_time - prev.first);
+    return sum / (curr_time - start_time);
+}
+
+void Store::output() {
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl << "STORE " << name << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl;
+    std::cout << "Capacity=" << initial_capacity << std::endl
+              << "Enter operations=" << entries << std::endl
+              << "Min used capacity=" << min_used << std::endl
+              << "Max used capacity=" << max_used << std::endl
+              << "Avg used capacity=" << avg_used() << std::endl;
+}
+
+
+
+
+
+

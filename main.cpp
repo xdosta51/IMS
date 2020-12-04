@@ -233,10 +233,35 @@ class UTS : public Event {
     }
 };
 
+// -----------------------------------------------------------------------------
+// StoreOut example
+
+Store SOut("StoreOut STORE", 10);
+
+class SOL : public Event {
+    void behavior() override{
+        std::cout << "leave store at " << curr_time << std::endl;
+        leave(&SOut, nullptr, 5);
+    }
+};
+
+class SOW : public Event {
+    void behavior() override{
+        std::cout << "enter store at " << curr_time << std::endl;
+        (new SOL)->activate(curr_time + 50);
+    }
+};
+
+class SOS : public Event {
+    void behavior() override{
+        std::cout << "start at " << curr_time << std::endl;
+        enter(&SOut, new SOW, 5);
+    }
+};
 
 int main() {
     set_seed(time(nullptr)); // seed aktualnim casem
-    init(0, 150);
+    init(0, 1000);
 
     /*
     // periodic event example
@@ -270,20 +295,24 @@ int main() {
     // Facility example
     (new FacilityTestGenerator)->activate();
 
-
-    /*
     // Store example
-    (new SE1G)->activate();
-    */
-
+    //(new SE1G)->activate();
 
     // UtilizTest example
     //(new UTS)->activate();
+
+    // StoreOut example
+    //(new SOS)->activate(curr_time+25);
 
     run();
 
     //UTF.output();
     f.output();
+
+    // StoreOut example
+    //SOut.output();
+
+    //s.output();
 
     return 0;
 }
