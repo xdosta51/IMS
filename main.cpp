@@ -293,10 +293,10 @@ int main() {
 
 
     // Facility example
-    (new FacilityTestGenerator)->activate();
+    //(new FacilityTestGenerator)->activate();
 
     // Store example
-    //(new SE1G)->activate();
+    (new SE1G)->activate();
 
     // UtilizTest example
     //(new UTS)->activate();
@@ -307,12 +307,12 @@ int main() {
     run();
 
     //UTF.output();
-    f.output();
+    //f.output();
 
     // StoreOut example
     //SOut.output();
 
-    //s.output();
+    s.output();
 
     return 0;
 }

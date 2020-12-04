@@ -381,6 +381,11 @@ void Store::output() {
               << "Min used capacity=" << min_used << std::endl
               << "Max used capacity=" << max_used << std::endl
               << "Avg used capacity=" << avg_used() << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl << ".Q1" << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "*";
+    std::cout << std::endl;
+    q1->output();
 }
 
 
