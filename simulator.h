@@ -128,6 +128,8 @@ public:
 
     bool empty();
 
+    unsigned int length();
+
     void length_changed();
 
     void add_to_stats(double qi_time_spent);

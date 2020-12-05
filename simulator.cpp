@@ -22,7 +22,7 @@ double uniform() {
 }
 
 double uniform(double start, double end) {
-    double i = start + end * uniform();
+    double i = start + (end - start) * uniform();
     return (i);
 }
 
@@ -201,6 +201,7 @@ void Queue::enqueue(Event *e) {
     qi->e = e;
     qi->entered_at = curr_time;
     q.insert(qi);
+    length_changed();
 }
 
 void Queue::enqueue(Event *e, unsigned int amount) {
@@ -223,6 +224,11 @@ Event *Queue::pop() {
 
 bool Queue::empty() {
     return q.empty();
+}
+
+
+unsigned int Queue::length() {
+    return q.size();
 }
 
 void Queue::length_changed() {
@@ -252,8 +258,9 @@ void Queue::output() {
               << "Avg length=" << avg_len() << std::endl
               << "Min time=" << min_time_spent << std::endl
               << "Max time=" << max_time_spent << std::endl
-              << "Avg time=" << avg_time << std::endl;
+              << "Avg time=" << avg_time << std::endl << std::endl;
 }
+
 
 // -----------------------------------------------------------------------------
 // Facility
@@ -430,5 +437,6 @@ void Histogram::output() {
                   << hist[i] << "\t|\t"
                   << hist[i] / values.size() << std::endl;
     }
+    std::cout << std::endl;
 }
 
