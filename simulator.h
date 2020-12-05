@@ -203,4 +203,23 @@ public:
     void output();
 };
 
+
+// -----------------------------------------------------------------------------
+// Histogram
+
+class Histogram {
+    std::list<double> values;
+    std::string name;
+    double start;
+    double step;
+    unsigned int bins;
+public:
+    Histogram(std::string name, double start, double step, unsigned int bins);
+
+    void add(double value);
+
+    void output();
+};
+
+
 #endif //IMS_SIMULATOR_H

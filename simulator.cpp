@@ -388,8 +388,47 @@ void Store::output() {
     q1->output();
 }
 
+// -----------------------------------------------------------------------------
+// Histogram
 
+Histogram::Histogram(std::string name, double start, double step, unsigned int bins) {
+    this->name = name;
+    this->start = start;
+    this->step = step;
+    this->bins = bins;
+}
 
+void Histogram::add(double value) {
+    values.push_back(value);
+}
 
+void Histogram::output() {
+    std::vector<double> hist(bins, 0.0);
+    values.sort();
+    int b = 0;
 
+    for (auto v = values.begin(); v != values.end(); v++) {
+        if (*v < start) {
+            continue;
+        }
+        while (*v >= start + (b + 1) * step) {
+            b++;
+        }
+        if (b >= bins) {
+            break;
+        }
+        hist[b] += 1;
+    }
+
+    for (int i = 0; i < 80; i++) std::cout << "=";
+    std::cout << std::endl << "HISTOGRAM " << name << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "=";
+    std::cout << std::endl << "from|\tto\t|\tn\t|\trel" << std::endl;
+    for (int i = 0; i < bins; i++) {
+        std::cout << start + i * step << "\t|\t"
+                  << start + (i + 1) * step << "\t|\t"
+                  << hist[i] << "\t|\t"
+                  << hist[i] / values.size() << std::endl;
+    }
+}
 

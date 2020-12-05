@@ -296,13 +296,19 @@ int main() {
     //(new FacilityTestGenerator)->activate();
 
     // Store example
-    (new SE1G)->activate();
+    //(new SE1G)->activate();
 
     // UtilizTest example
     //(new UTS)->activate();
 
     // StoreOut example
     //(new SOS)->activate(curr_time+25);
+
+    Histogram unif_hist("test", 0.0,1.0,10);
+    for(int i = 0; i < 1000; i++){
+        unif_hist.add(uniform(0,10));
+    }
+    unif_hist.output();
 
     run();
 
@@ -312,7 +318,7 @@ int main() {
     // StoreOut example
     //SOut.output();
 
-    s.output();
+    //s.output();
 
     return 0;
 }
