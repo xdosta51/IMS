@@ -307,14 +307,14 @@ double Facility::utilization() {
 }
 
 void Facility::output() {
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << "FACILITY " << name << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << "Requests=" << requests << std::endl
               << "Utilization=" << utilization() << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << ".Q1" << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl;
     q1->output();
 }
@@ -379,18 +379,18 @@ double Store::avg_used() {
 }
 
 void Store::output() {
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << "STORE " << name << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl;
     std::cout << "Capacity=" << initial_capacity << std::endl
               << "Enter operations=" << entries << std::endl
               << "Min used capacity=" << min_used << std::endl
               << "Max used capacity=" << max_used << std::endl
               << "Avg used capacity=" << avg_used() << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << ".Q1" << std::endl;
-    for (int i = 0; i < 80; i++) std::cout << "*";
+    for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl;
     q1->output();
 }
@@ -429,6 +429,13 @@ void Histogram::output() {
 
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << "HISTOGRAM " << name << std::endl;
+    for (int i = 0; i < 80; i++) std::cout << "=";
+    std::cout << std::endl
+              << "Records= " << values.size() << std::endl
+              << "Min= " << values.front() << std::endl
+              << "Max= " << values.back() << std::endl
+              << "Avg= " << std::accumulate(values.begin(), values.end(), 0.0) / values.size() << std::endl;
+
     for (int i = 0; i < 80; i++) std::cout << "=";
     std::cout << std::endl << "from|\tto\t|\tn\t|\trel" << std::endl;
     for (int i = 0; i < bins; i++) {
