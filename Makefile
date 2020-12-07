@@ -1,5 +1,7 @@
 all:
-	g++ -std=c++17 main.cpp simulator.cpp -o simulator
+	g++ -std=c++17 main.cpp simulator.cpp -o samoobsluha
+run: all
+	./samoobsluha
 event_priority:
 	g++ -std=c++17 examples/event_priority.cpp simulator.cpp -o event_priority
 	./event_priority
@@ -18,6 +20,5 @@ rng_histogram:
 store:
 	g++ -std=c++17 examples/store.cpp simulator.cpp -o store
 	./store
-all tests: event_priority facility periodic_event queue_with_priority rng_histogram store
 clean:
-	rm simulator event_priority facility periodic_event queue_with_priority rng_histogram store
+	rm samoobsluha event_priority facility periodic_event queue_with_priority rng_histogram store
